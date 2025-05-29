@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M3U Playlist Filter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body> <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title-toggle">
+                    <h2>Categories</h2>
+                    <button id="themeToggleButton" title="Toggle Theme">🌙</button>
+                </div>
+                <input type="text" id="categorySearchInput" placeholder="Search categories...">
+            </div>
+            <div id="categoryListContainer" class="scrollable-list">
+                </div>
+            <div class="sidebar-footer">
+                 <p id="totalChannelsMessage">Load a playlist to begin.</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-content-header">
+                <h1 id="channelPaneTitle">Select a Category</h1>
+                <div class="main-actions">
+                    <button id="selectAllButton" disabled>Select All</button>
+                    <button id="deselectAllButton" disabled>Deselect All</button>
+                    <button id="saveFilteredButton" disabled>Save Locally</button>
+                    <button id="generateShareLinkButton" disabled>Generate Share Link</button>
+                </div>
+            </header>
+            <section id="channelGridContainer">
+                <div id="shareLinkStatusMessage" class="status-message"></div> 
+                
+                <input type="text" id="channelSearchInput" placeholder="Search channels..." style="display: none;">
+                <p id="loadingMessage" style="display: none;">Loading...</p>
+                <div id="channelGrid">
+                    </div>
+                </section>
+        </main>
+    </div>
+
+    <div class="file-input-container">
+        <label for="m3uFile" class="file-input-label">Load M3U from File:</label>
+        <input type="file" id="m3uFile" accept=".m3u,.m3u8">
+        
+        <span class="input-separator">OR</span>
+
+        <label for="m3uUrlInput" class="file-input-label">Load M3U from URL:</label>
+        <input type="url" id="m3uUrlInput" placeholder="https://example.com/playlist.m3u">
+        <button id="loadFromUrlButton">Load URL</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

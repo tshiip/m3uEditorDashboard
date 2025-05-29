@@ -1,0 +1,188 @@
+/* General Reset / Base */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- THEME VARIABLES --- (Keep as is from previous version) */
+:root {
+    --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* Light Theme (Default) */
+    --bg-page: #f0f2f5;
+    --bg-element: #ffffff; /* cards, sidebar, header */
+    --bg-element-alt: #f9fafb; /* main content area bg */
+    --bg-hover: #f0f2f5; 
+    --bg-active: #e0e7ff; 
+    --text-primary: #111827; 
+    --text-secondary: #374151; 
+    --text-muted: #6b7280; 
+    --text-on-accent: #ffffff;
+    --text-on-active: #3730a3; 
+    --border-primary: #d1d5db; 
+    --border-secondary: #e5e7eb; 
+    --border-subtle: #f3f4f6; 
+    --accent-primary: #10b981; 
+    --accent-primary-darker: #059669;
+    --accent-secondary: #3498db; 
+    --accent-secondary-darker: #2980b9;
+    --shadow-color: rgba(0,0,0,0.05);
+    --shadow-hover-color: rgba(0,0,0,0.1);
+    --input-bg: #ffffff;
+    --input-border: var(--border-primary);
+    --input-text: var(--text-primary);
+    --input-placeholder-text: var(--text-muted);
+    --button-disabled-bg: #ccc;
+    --button-disabled-text: #777;
+    --button-disabled-border: #ccc;
+    --file-input-bar-bg: #374151;
+    --file-input-bar-text: #f3f4f6;
+    --file-input-text: #e5e7eb;
+    --overlay-backdrop-bg: rgba(0, 0, 0, 0.5);
+    --status-success-bg: #e6fffa;
+    --status-success-text: #00796b;
+    --status-success-border: #b2dfdb;
+    --status-error-bg: #ffebee;
+    --status-error-text: #c62828;
+    --status-error-border: #ffcdd2;
+    --status-link-text: var(--accent-primary-darker, #004d40);
+    --status-link-hover-text: var(--accent-primary, #00796b);
+}
+
+body.dark-theme {
+    --bg-page: #1f2937; 
+    --bg-element: #374151; 
+    --bg-element-alt: #2d3748; 
+    --bg-hover: #4b5563; 
+    --bg-active: #312e81; 
+    --text-primary: #f3f4f6; 
+    --text-secondary: #d1d5db; 
+    --text-muted: #9ca3af; 
+    --text-on-active: #c7d2fe;
+    --border-primary: #4b5563; 
+    --border-secondary: #374151; 
+    --border-subtle: #2d3748; 
+    --shadow-color: rgba(0,0,0,0.2);
+    --shadow-hover-color: rgba(0,0,0,0.3);
+    --input-bg: #2d3748;
+    --input-border: var(--border-primary);
+    --input-text: var(--text-primary);
+    --input-placeholder-text: var(--text-muted);
+    --button-disabled-bg: #4b5563;
+    --button-disabled-text: #9ca3af;
+    --button-disabled-border: #4b5563;
+    --file-input-bar-bg: #1f2937; 
+    --file-input-bar-text: #d1d5db;
+    --file-input-text: #9ca3af;
+    --overlay-backdrop-bg: rgba(0, 0, 0, 0.7);
+    --status-success-bg: #1a3a34; 
+    --status-success-text: #80cbc4; 
+    --status-success-border: #26a69a;
+    --status-error-bg: #4d1f1f; 
+    --status-error-text: #ef9a9a; 
+    --status-error-border: #e57373;
+    --status-link-text: var(--accent-primary, #10b981);
+    --status-link-hover-text: #34d399; 
+}
+/* --- END THEME VARIABLES --- */
+
+
+body { /* ... (no changes) ... */ font-family: var(--font-primary); background-color: var(--bg-page); color: var(--text-primary); line-height: 1.5; height: 100vh; overflow: hidden; }
+.app-container { /* ... (no changes) ... */ display: flex; height: 100vh; }
+.sidebar { /* ... (no changes) ... */ width: 280px; flex-shrink: 0; background-color: var(--sidebar-bg, var(--bg-element)); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-header { /* ... (no changes) ... */ padding: 15px; border-bottom: 1px solid var(--border-secondary); display: flex; flex-direction: column; gap: 10px; }
+.sidebar-title-toggle { /* ... (no changes) ... */ display: flex; justify-content: space-between; align-items: center; }
+.sidebar-header h2 { /* ... (no changes) ... */ font-size: 1.25em; color: var(--text-primary); margin-bottom: 0; }
+#themeToggleButton { /* ... (no changes) ... */ background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 1.1em; line-height: 1; transition: background-color 0.2s, border-color 0.2s; }
+#themeToggleButton:hover { background-color: var(--bg-hover); border-color: var(--text-muted); }
+#categorySearchInput { /* ... (no changes) ... */ width: 100%; padding: 8px 10px; border: 1px solid var(--input-border); background-color: var(--input-bg); color: var(--input-text); border-radius: 6px; font-size: 0.9em; }
+#categorySearchInput::placeholder { color: var(--input-placeholder-text); }
+#categoryListContainer { /* ... (no changes) ... */ flex-grow: 1; overflow-y: auto; padding: 10px 0; }
+.category-list-item { /* ... (no changes) ... */ padding: 10px 15px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; transition: background-color 0.15s ease-in-out; }
+.category-list-item:hover { background-color: var(--bg-hover); }
+.category-list-item.active { background-color: var(--active-category-bg, var(--bg-active)); }
+.category-list-item.active .category-name { font-weight: 600; color: var(--active-category-text, var(--text-on-active)); }
+.category-list-item .circular-toggle { /* ... (no changes) ... */ margin-right: 10px; flex-shrink: 0; }
+.category-name { /* ... (no changes) ... */ flex-grow: 1; word-break: break-word; font-size: 0.95em; color: var(--text-primary); }
+.category-channel-count { /* ... (no changes) ... */ font-size: 0.8em; color: var(--text-muted); background-color: var(--bg-page); padding: 2px 6px; border-radius: 4px; margin-left: 10px; flex-shrink: 0; }
+.sidebar-footer { /* ... (no changes) ... */ padding: 15px; border-top: 1px solid var(--border-secondary); font-size: 0.85em; color: var(--text-muted); text-align: center; }
+.main-content { /* ... (no changes) ... */ flex-grow: 1; display: flex; flex-direction: column; background-color: var(--main-content-bg, var(--bg-element-alt)); overflow: hidden; }
+.main-content-header { /* ... (no changes) ... */ padding: 15px 20px; background-color: var(--header-bg, var(--bg-element)); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.main-content-header h1 { /* ... (no changes) ... */ font-size: 1.5em; color: var(--text-primary); margin: 0; }
+.main-actions { /* ... (no changes) ... */ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#channelSearchInput { width: 100%; padding: 10px; border: 1px solid var(--input-border); background-color: var(--input-bg); color: var(--input-text); border-radius: 6px; box-sizing: border-box; font-size: 0.9em; margin-bottom: 15px; }
+#channelSearchInput::placeholder { color: var(--input-placeholder-text); }
+.main-actions button { /* ... (no changes) ... */ padding: 8px 12px; border: 1px solid var(--button-action-border, var(--border-color)); background-color: var(--button-action-bg, var(--bg-element)); color: var(--button-action-text, var(--text-secondary)); border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.9em; transition: background-color 0.15s ease, border-color 0.15s ease; }
+.main-actions button:hover:not(:disabled) { background-color: var(--bg-hover); border-color: var(--text-muted); }
+.main-actions button:disabled { background-color: var(--button-disabled-bg); color: var(--button-disabled-text); border-color: var(--button-disabled-border); opacity: 0.6; cursor: not-allowed; }
+#saveFilteredButton { /* ... (no changes) ... */ background-color: var(--accent-secondary); color: var(--text-on-accent); border-color: var(--accent-secondary-darker); }
+#saveFilteredButton:hover:not(:disabled) { background-color: var(--accent-secondary-darker); }
+#selectAllButton, #deselectAllButton { /* ... (no changes) ... */ background-color: var(--accent-secondary); color: var(--text-on-accent); border-color: var(--accent-secondary-darker); }
+#selectAllButton:hover:not(:disabled), #deselectAllButton:hover:not(:disabled) { background-color: var(--accent-secondary-darker); }
+#generateShareLinkButton { /* ... (no changes) ... */ background-color: var(--accent-primary); color: var(--text-on-accent); border: 1px solid var(--accent-primary-darker); }
+#generateShareLinkButton:hover:not(:disabled) { background-color: var(--accent-primary-darker); }
+#channelGridContainer { /* ... (no changes) ... */ flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+#loadingMessage { /* ... (no changes) ... */ text-align: center; color: var(--text-muted); font-style: italic; padding: 20px; font-size: 1em; }
+#channelGrid { /* ... (no changes) ... */ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+.channel-item { /* ... (no changes) ... */ background-color: var(--tile-bg, var(--bg-element)); border: 1px solid var(--border-secondary); border-radius: 6px; padding: 10px; display: flex; align-items: flex-start; gap: 8px; min-height: 40px; transition: box-shadow 0.15s ease; overflow: hidden; }
+.channel-item:hover { box-shadow: 0 1px 3px 0 var(--shadow-hover-color), 0 1px 2px -1px var(--shadow-hover-color); }
+.channel-name-text { /* ... (no changes) ... */ flex-grow: 1; font-size: 0.9em; color: var(--text-secondary); word-break: break-word; white-space: normal; min-width: 0; line-height: 1.4; cursor: pointer; }
+.circular-toggle { /* ... (no changes) ... */ width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); background-color: var(--bg-element); cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.circular-toggle.active { background-color: var(--accent-primary); border-color: var(--accent-primary-darker); }
+.circular-toggle.active::before { content: ''; display: block; width: 8px; height: 8px; background-color: var(--text-on-accent); border-radius: 50%; }
+.file-input-container { /* ... (no changes) ... */ position: fixed; bottom: 0; left: 0; width: 100%; padding: 10px 15px; background-color: var(--file-input-bar-bg); color: var(--file-input-bar-text); box-shadow: 0 -2px 5px var(--shadow-color); z-index: 100; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.file-input-label { /* ... (no changes) ... */ font-size: 0.9em; margin-right: 5px; }
+#m3uFile { /* ... (no changes) ... */ color: var(--file-input-text); max-width: 200px; }
+.input-separator { /* ... (no changes) ... */ font-size: 0.9em; font-weight: bold; color: var(--text-muted); margin: 0 5px; }
+#m3uUrlInput { /* ... (no changes) ... */ flex-grow: 1; padding: 6px 8px; border: 1px solid var(--input-border); background-color: var(--input-bg); color: var(--input-text); border-radius: 4px; font-size: 0.9em; min-width: 250px; }
+#m3uUrlInput::placeholder { color: var(--input-placeholder-text); }
+#loadFromUrlButton { /* ... (no changes) ... */ padding: 6px 12px; border: 1px solid var(--button-action-border, var(--border-color)); background-color: var(--button-action-bg, var(--bg-element)); color: var(--button-action-text, var(--text-secondary)); border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9em; transition: background-color 0.15s ease; }
+#loadFromUrlButton:hover { background-color: var(--bg-hover); }
+.empty-state-message { /* ... (no changes) ... */ text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 1em; width: 100%; }
+#channelOverlay { /* ... (no changes) ... */ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--overlay-backdrop-bg); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;}
+#channelOverlay.overlay-visible { opacity: 1; visibility: visible; }
+.overlay-content { /* ... (no changes) ... */ background-color: var(--overlay-bg, var(--bg-element)); padding: 20px 25px; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; box-shadow: 0 5px 15px var(--shadow-hover-color); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.overlay-header { /* ... (no changes) ... */ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+.overlay-header h2 { /* ... (no changes) ... */ margin: 0; font-size: 1.5em; color: var(--text-primary); }
+.close-button { /* ... (no changes) ... */ background: none; border: none; font-size: 2em; line-height: 1; cursor: pointer; padding: 0 5px; color: var(--text-muted); }
+.close-button:hover { color: var(--text-primary); }
+.overlay-search-controls { /* ... (no changes) ... */ margin-bottom: 15px; }
+.scrollable-channel-list { /* ... (no changes) ... */ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); row-gap: 20px; column-gap: 15px; overflow-y: auto; overflow-x: hidden; flex-grow: 1; padding: 10px; }
+
+/* Status Message Styles (for Share Link status) */
+.status-message {
+    /* MODIFIED: Removed margin-top, added margin-bottom for spacing when at top */
+    margin-bottom: 15px; 
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    word-break: break-word; 
+    text-align: left; /* MODIFIED: Changed from center for better look at top */
+    display: none; 
+    line-height: 1.4;
+}
+.status-message.success {
+    background-color: var(--status-success-bg);
+    color: var(--status-success-text);
+    border: 1px solid var(--status-success-border);
+}
+.status-message.error {
+    background-color: var(--status-error-bg);
+    color: var(--status-error-text);
+    border: 1px solid var(--status-error-border);
+}
+.status-message a {
+    color: var(--status-link-text);
+    font-weight: 500; /* Was bold, 500 is good */
+    text-decoration: underline;
+}
+.status-message a:hover {
+    color: var(--status-link-hover-text);
+    text-decoration: none;
+}
+.status-message small {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
