@@ -1,2 +1,2 @@
 # m3uEditorDashboard
-A simle friendly opensource dashboard to edit your m3u playlist.
+A simple friendly opensource dashboard to edit your m3u playlist.
