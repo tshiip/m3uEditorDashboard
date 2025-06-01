@@ -1,13 +1,13 @@
 const NO_GROUP_CATEGORY_NAME = "[No Group / Uncategorized]";
 
 function parseM3UContentForWorker(content) {
-    let localCategoriesData = {}; // Renamed to avoid confusion if this code is ever merged back
+    let localCategoriesData = {};
     let localOriginalHeader = "#EXTM3U";
     let localOtherDirectives = [];
+    let tempCategories = {};
 
     const lines = content.split(/\r?\n/);
     let currentChannelInfo = null;
-    let tempCategories = {};
 
     if (lines.length > 0 && lines[0].trim().toUpperCase().startsWith("#EXTM3U")) {
         localOriginalHeader = lines[0].trim();
@@ -20,13 +20,68 @@ function parseM3UContentForWorker(content) {
 
         if (line.startsWith('#EXTINF:')) {
             currentChannelInfo = { info: line, name: '', attributes: {}, url: '' };
-            const nameMatch = line.match(/,(.+)$/);
-            currentChannelInfo.name = nameMatch ? nameMatch[1].trim() : 'Unknown Channel';
+
             const attrRegex = /([a-zA-Z0-9_-]+)=("([^"]*)"|([^"\s]+))/g;
-            let match;
-            while ((match = attrRegex.exec(line)) !== null) {
-                currentChannelInfo.attributes[match[1]] = match[3] || match[4];
+            let matchAttr;
+            while ((matchAttr = attrRegex.exec(line)) !== null) {
+                currentChannelInfo.attributes[matchAttr[1]] = matchAttr[3] || matchAttr[4];
             }
+
+            const nameMatch = line.match(/,(.+)$/);
+            let displayName = nameMatch ? nameMatch[1].trim() : 'Unknown Channel';
+
+            // --- REFINED HEURISTIC TO CLEANUP DISPLAY NAME ---
+            // Only apply if the name is long and seems to contain attribute patterns
+            if (displayName.length > 60 && displayName.includes('="')) {
+                const markers = ['group-title="', 'tvg-logo="', 'tvg-name="', 'tvg-id="', 'catchup-source="']; // Common markers
+                let bestCandidateTitle = displayName;
+                let lastAttributeEndPosition = -1;
+
+                // Find the end position of the last recognizable attribute within the current displayName
+                for (const marker of markers) {
+                    let searchFrom = 0;
+                    while (searchFrom < displayName.length) {
+                        const markerPos = displayName.indexOf(marker, searchFrom);
+                        if (markerPos === -1) break;
+
+                        const quoteAfterMarker = displayName.indexOf('"', markerPos + marker.length);
+                        if (quoteAfterMarker === -1) { // Malformed or unquoted attribute value, less reliable
+                            searchFrom = markerPos + marker.length;
+                            continue;
+                        }
+                        // The attribute effectively ends at its closing quote
+                        if (quoteAfterMarker > lastAttributeEndPosition) {
+                            lastAttributeEndPosition = quoteAfterMarker;
+                        }
+                        searchFrom = quoteAfterMarker + 1;
+                    }
+                }
+
+                if (lastAttributeEndPosition !== -1) {
+                    // Now look for the first comma *after* this last found attribute's value
+                    const commaAfterAttributes = displayName.indexOf(',', lastAttributeEndPosition + 1);
+                    if (commaAfterAttributes !== -1) {
+                        const potentialTitle = displayName.substring(commaAfterAttributes + 1).trim();
+                        if (potentialTitle) { // If there's something after that comma
+                            // Further check: ensure this potential title doesn't look like more attributes
+                            let looksLikeMoreAttributes = false;
+                            for (const marker of markers) { // Use a subset or different check if needed
+                                if (potentialTitle.startsWith(marker) || (potentialTitle.includes('="') && potentialTitle.indexOf('="') < 20) ) {
+                                    looksLikeMoreAttributes = true;
+                                    break;
+                                }
+                            }
+                            if (!looksLikeMoreAttributes) {
+                                bestCandidateTitle = potentialTitle;
+                            }
+                        }
+                    }
+                }
+                displayName = bestCandidateTitle;
+            }
+            currentChannelInfo.name = displayName;
+            // --- END REFINED HEURISTIC ---
+
         } else if (currentChannelInfo && !line.startsWith('#')) {
             currentChannelInfo.url = line;
             const groupTitle = currentChannelInfo.attributes['group-title'] || NO_GROUP_CATEGORY_NAME;
@@ -36,6 +91,7 @@ function parseM3UContentForWorker(content) {
             tempCategories[groupTitle].channels.push({
                 name: currentChannelInfo.name,
                 info: currentChannelInfo.info,
+                attributes: currentChannelInfo.attributes,
                 url: currentChannelInfo.url,
                 state: true
             });
@@ -48,6 +104,7 @@ function parseM3UContentForWorker(content) {
             tempCategories[groupTitle].channels.push({
                 name: currentChannelInfo.name,
                 info: currentChannelInfo.info,
+                attributes: currentChannelInfo.attributes,
                 url: '',
                 state: true
             });
@@ -57,8 +114,9 @@ function parseM3UContentForWorker(content) {
             localOtherDirectives.push(line);
         }
     }
-    
-    const sortedCategoryNames = Object.keys(tempCategories).sort((a, b) => {
+
+    const categoryKeys = Object.keys(tempCategories);
+    const sortedCategoryNames = categoryKeys.sort((a, b) => {
         if (a === NO_GROUP_CATEGORY_NAME) return -1;
         if (b === NO_GROUP_CATEGORY_NAME) return 1;
         return a.toLowerCase().localeCompare(b.toLowerCase());
@@ -76,14 +134,13 @@ function parseM3UContentForWorker(content) {
     };
 }
 
-// Listen for messages from the main thread
 self.onmessage = function(event) {
     const fileContent = event.data;
     try {
         const parsedData = parseM3UContentForWorker(fileContent);
-        // Send the parsed data back to the main thread
         self.postMessage({ success: true, data: parsedData });
     } catch (error) {
-        self.postMessage({ success: false, error: error.message });
+        console.error("Worker: CAUGHT ERROR during parsing: ", error.message, error.stack);
+        self.postMessage({ success: false, error: error.message + (error.stack ? `\nStack: ${error.stack}` : '') });
     }
 };
