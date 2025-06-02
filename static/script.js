@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const m3uUrlInput = document.getElementById('m3uUrlInput');
     const loadFromUrlButton = document.getElementById('loadFromUrlButton');
-    const generateShareLinkButton = document.getElementById('generateShareLinkButton'); // New button
-    const shareLinkStatusMessage = document.getElementById('shareLinkStatusMessage'); // New status div
+    const generateShareLinkButton = document.getElementById('generateShareLinkButton');
+    const shareLinkStatusMessage = document.getElementById('shareLinkStatusMessage');
 
     // Data and state
     let categoriesData = {}; 
@@ -92,11 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleLoading(isLoading, pane = "main") {
         if (pane === "main") {
             loadingMessage.style.display = isLoading ? 'block' : 'none';
-            // When loading, we might want to clear the channel grid or show a specific loading state there
             if(isLoading) channelGridDiv.innerHTML = ''; 
-            // categoryGridDiv.style.display is handled by initial load or search results
         }
-         if (isLoading) { // General disable for all loading states
+         if (isLoading) {
             disableActionButtons();
         }
     }
@@ -118,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channelToggleButtonMap.clear();
         disableActionButtons();
         updateTotalChannelsMessage();
-        if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none'; // Hide previous share link status
+        if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none';
     }
 
     function processM3UContent(contentString, sourceDescription = "playlist") {
@@ -126,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleLoading(true, "main"); 
 
         if (m3uParserWorker) m3uParserWorker.terminate();
-        m3uParserWorker = new Worker('static/m3u_parser_worker.js');
+        m3uParserWorker = new Worker('static/m3u_parser_worker.js'); // Assuming m3u_parser_worker.js is in the same static folder
 
         m3uParserWorker.onmessage = function(e) {
             if (e.data.success) {
@@ -147,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (m3uParserWorker) { m3uParserWorker.terminate(); m3uParserWorker = null; }
         };
         m3uParserWorker.onerror = function(error) {
-            console.error(`Worker script error while processing ${sourceDescription}:`, error.message);
+            console.error(`Worker script error while processing ${sourceDescription}:`, error.message, error);
             setChannelPanePlaceholder(`A critical error occurred with the playlist processor for ${sourceDescription}.`, true);
             toggleLoading(false, "main");
             disableActionButtons();
@@ -168,41 +166,62 @@ document.addEventListener('DOMContentLoaded', () => {
         processM3UContent(fileContent, "local file");
     }
 
+    // *** MODIFIED FUNCTION: handleLoadFromUrl ***
     async function handleLoadFromUrl() {
         const url = m3uUrlInput.value.trim();
         if (!url) {
-            alert("Please enter an M3U URL."); 
+            alert("Please enter an M3U URL.");
             return;
         }
 
         commonInitialClearAndSetup();
         toggleLoading(true, "main");
-        loadingMessage.textContent = `Fetching playlist from URL...`;
+        loadingMessage.textContent = `Fetching playlist from URL via proxy...`; // Updated message
 
         try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText || 'Failed to fetch'}`);
+            // Instead of direct fetch, call our backend proxy
+            const backendResponse = await fetch('/proxy_m3u_url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }) // Send the target URL to our backend
+            });
+
+            const result = await backendResponse.json(); // Get JSON response from our backend
+
+            if (!backendResponse.ok || !result.success) {
+                // If backendResponse.ok is false, result.error might come from Flask's error handlers (e.g. for 404, 500 before our JSON)
+                // If result.success is false, it's a custom error from our /proxy_m3u_url logic
+                throw new Error(result.error || `Failed to fetch from URL. Server responded with status: ${backendResponse.status}`);
             }
-            const urlContent = await response.text();
+            
+            const urlContent = result.m3uContent;
+
             if (!urlContent || !urlContent.trim().toUpperCase().startsWith("#EXTM3U")) {
-                 console.warn("Content from URL doesn't start with #EXTM3U. Processing anyway.");
+                console.warn("Content from proxied URL doesn't start with #EXTM3U. Processing anyway.");
             }
             processM3UContent(urlContent, `URL: ${url.substring(0, 50)}...`);
         } catch (error) {
-            console.error("Error fetching or processing URL:", error);
-            setChannelPanePlaceholder(`Failed to load from URL: ${error.message}. This might be due to network issues or CORS policy.`, true);
+            console.error("Error loading from URL via proxy:", error);
+            // Ensure the error message displayed is helpful
+            let displayError = error.message;
+            if (error.message.includes("Failed to fetch")) { // Network error connecting to our backend proxy
+                displayError = "Network error connecting to the server. Please check your connection.";
+            }
+            setChannelPanePlaceholder(`Failed to load from URL: ${displayError}`, true);
             toggleLoading(false, "main");
             disableActionButtons();
         }
     }
+    // *** END MODIFIED FUNCTION ***
 
     function displayShareLinkStatus(message, isSuccess, link = null, expiryInfo = null) {
         if (!shareLinkStatusMessage) return;
         
         let contentHTML = message;
         if (link) {
-            contentHTML += `<br><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a>`; // Added rel attribute
+            contentHTML += `<br><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a>`;
         }
         if (expiryInfo) {
             contentHTML += `<br><small>(Link expires in approximately ${expiryInfo})</small>`;
@@ -219,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleGenerateShareLink() {
-        if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none'; // Hide previous message
-        displayShareLinkStatus("Generating shareable link...", null); // Info message
+        if(shareLinkStatusMessage) shareLinkStatusMessage.style.display = 'none';
+        displayShareLinkStatus("Generating shareable link...", null); 
 
         let m3uContent = originalHeader + '\n';
         otherDirectives.forEach(directive => m3uContent += directive + '\n');
@@ -262,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function updateTotalChannelsMessage() { /* ... (no changes) ... */ 
+    function updateTotalChannelsMessage() { 
         if (Object.keys(categoriesData).length > 0) {
             let totalChannels = 0;
             for (const catName in categoriesData) totalChannels += categoriesData[catName].channels.length;
@@ -271,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalChannelsMessage.textContent = "Load a playlist to begin.";
         }
     }
-    function setChannelPanePlaceholder(message, isError = false) { /* ... (no changes) ... */ 
+    function setChannelPanePlaceholder(message, isError = false) { 
         channelGridDiv.innerHTML = `<p class="empty-state-message ${isError ? 'error' : ''}">${message}</p>`;
         channelPaneTitle.textContent = isError ? "Error" : "Channels List";
         channelSearchInput.style.display = 'none';
@@ -297,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectAllButton.disabled = true;
         deselectAllButton.disabled = true;
     }
-    function createCircularToggleButton(initialState, changeCallback) { /* ... (no changes) ... */
+    function createCircularToggleButton(initialState, changeCallback) {
         const button = document.createElement('button');
         button.classList.add('circular-toggle');
         if (initialState) button.classList.add('active');
@@ -308,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return button;
     }
-    function renderCategoryList() { /* ... (no changes) ... */
+    function renderCategoryList() {
         categoryListContainer.innerHTML = '';
         const fragment = document.createDocumentFragment();
         categoryToggleButtonMap.clear(); 
@@ -361,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         categoryListContainer.appendChild(fragment);
     }
-    function renderChannelsPane(categoryName) { /* ... (no changes) ... */
+    function renderChannelsPane(categoryName) {
         const category = categoriesData[categoryName];
         if (!category) { setChannelPanePlaceholder("Category not found.", true); return; }
         channelGridDiv.innerHTML = '';
@@ -382,8 +401,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateCategoryToggleFromChannelStates(categoryName);
                 });
                 channelItemDiv.appendChild(toggleButton);
-                const originalIndex = categoriesData[categoryName].channels.indexOf(channel);
+                // Storing original index for mapping is fine, but ensure it's robust if channels array can change order elsewhere
+                const originalIndex = categoriesData[categoryName].channels.indexOf(channel); 
                 channelToggleButtonMap.set(`${categoryName}_${originalIndex}`, toggleButton);
+
                 const channelNameSpan = document.createElement('span');
                 channelNameSpan.classList.add('channel-name-text');
                 channelNameSpan.textContent = channel.name;
@@ -395,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         enableActionButtonsForPane(); 
     }
-    function updateCategoryToggleFromChannelStates(categoryName) { /* ... (no changes) ... */
+    function updateCategoryToggleFromChannelStates(categoryName) {
         const category = categoriesData[categoryName];
         if (!category || !category.channels) return;
         let newCategoryDataState;
@@ -408,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else categoryToggle.classList.remove('active');
         }
     }
-    function toggleAllMaster(selectState) { /* ... (no changes) ... */
+    function toggleAllMaster(selectState) { 
         currentCategorySearchTerm = ""; 
         categorySearchInput.value = "";   
         for (const categoryName in categoriesData) {
@@ -418,12 +439,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderCategoryList(); 
         if (activeCategoryName && categoriesData[activeCategoryName]) {
-            renderChannelsPane(activeOverlayCategoryName); 
+             // If an active category is selected, re-render its channels
+            renderChannelsPane(activeCategoryName); // Changed from activeOverlayCategoryName
         } else if (!activeCategoryName && Object.keys(categoriesData).length > 0) {
+             // If no category is active but data exists, show placeholder
              setChannelPanePlaceholder("Select a category to view channels.");
         }
+        // Ensure action buttons are updated according to the new overall state
+        if (activeCategoryName) {
+            enableActionButtonsForPane();
+        } else {
+            enableSaveButtonOnly(); // Or disable all if that's preferred after a global toggle
+        }
     }
-    function saveFilteredM3U() { /* ... (no changes) ... */
+    function saveFilteredM3U() {
         let output = originalHeader + '\n';
         otherDirectives.forEach(directive => output += directive + '\n');
         for (const catName in categoriesData) {
@@ -436,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
-        const blob = new Blob([output], { type: 'application/vnd.apple.mpegurl' });
+        const blob = new Blob([output], { type: 'application/vnd.apple.mpegurl' }); // Or 'audio/mpegurl'
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -446,6 +475,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+
+    // Dummy hideChannelOverlay function if it's referenced but not fully implemented or needed for this view
+    function hideChannelOverlay() {
+        const overlay = document.getElementById('channelOverlay');
+        if (overlay) overlay.classList.remove('overlay-visible');
+        // Potentially reset any state related to the overlay if necessary
+    }
+
 
     // Initial setup
     disableActionButtons();
